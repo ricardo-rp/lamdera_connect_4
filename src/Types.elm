@@ -57,9 +57,5 @@ switchPlayer player =
             P1
 
 
-type alias Column =
-    List Cell
-
-
 type alias Board =
-    List Column
+    List (List Cell)

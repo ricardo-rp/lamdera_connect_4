@@ -110,7 +110,7 @@ view model =
     }
 
 
-makeColumn : Int -> Types.Column -> Element FrontendMsg
+makeColumn : Int -> List Cell -> Element FrontendMsg
 makeColumn index boardColumn =
     let
         reversedColumn =
