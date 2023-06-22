@@ -1,38 +1,11 @@
-module Board exposing (Board, Cell(..), Column, Player(..), dropPiece, init, switchPlayer)
+module Utils exposing (..)
 
 import List.Extra as List
+import Types exposing (..)
 
 
-type Cell
-    = Empty
-    | FilledBy Player
-
-
-type Player
-    = P1
-    | P2
-
-
-switchPlayer : Player -> Player
-switchPlayer player =
-    case player of
-        P1 ->
-            P2
-
-        P2 ->
-            P1
-
-
-type alias Column =
-    List Cell
-
-
-type alias Board =
-    List Column
-
-
-init : Board
-init =
+emptyBoard : Board
+emptyBoard =
     List.repeat 7 (List.repeat 6 Empty)
 
 

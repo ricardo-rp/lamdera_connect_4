@@ -1,6 +1,5 @@
 module Frontend exposing (..)
 
-import Board exposing (Cell(..), Player(..), switchPlayer)
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Colors exposing (blue, gray, lightGray, red)
@@ -12,6 +11,7 @@ import Element.Input exposing (button)
 import Lamdera
 import Types exposing (..)
 import Url
+import Utils exposing (dropPiece, emptyBoard)
 
 
 type alias Model =
@@ -33,7 +33,7 @@ app =
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
-      , board = Board.init
+      , board = emptyBoard
       , error = Nothing
       , currentPlayer = P1
       }
@@ -65,7 +65,7 @@ update msg model =
         ClickedRow colIndex ->
             let
                 boardResult =
-                    Board.dropPiece colIndex model.currentPlayer model.board
+                    dropPiece colIndex model.currentPlayer model.board
             in
             case boardResult of
                 Ok newBoard ->
@@ -110,7 +110,7 @@ view model =
     }
 
 
-makeColumn : Int -> Board.Column -> Element FrontendMsg
+makeColumn : Int -> Types.Column -> Element FrontendMsg
 makeColumn index boardColumn =
     let
         reversedColumn =

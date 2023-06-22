@@ -1,6 +1,5 @@
 module Types exposing (..)
 
-import Board exposing (Board, Player)
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Url exposing (Url)
@@ -36,3 +35,31 @@ type BackendMsg
 
 type ToFrontend
     = NoOpToFrontend
+
+
+type Cell
+    = Empty
+    | FilledBy Player
+
+
+type Player
+    = P1
+    | P2
+
+
+switchPlayer : Player -> Player
+switchPlayer player =
+    case player of
+        P1 ->
+            P2
+
+        P2 ->
+            P1
+
+
+type alias Column =
+    List Cell
+
+
+type alias Board =
+    List Column
