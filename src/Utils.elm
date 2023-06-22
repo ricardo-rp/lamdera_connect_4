@@ -1,6 +1,7 @@
-module Utils exposing (..)
+module Utils exposing (checkForWinner, dropPiece, emptyBoard, playerToString)
 
 import List.Extra as List
+import Maybe.Extra as Maybe
 import Types exposing (..)
 
 
@@ -50,43 +51,53 @@ checkLineForWinner list =
             Nothing
 
 
-checkColumns : Board -> Maybe Player
-checkColumns board =
+getRow : Board -> Int -> Maybe (List Cell)
+getRow board index =
     board
-        |> List.filterMap checkLineForWinner
-        |> List.head
+        |> List.filterMap (List.getAt index)
+        |> (\result ->
+                if List.length result == List.length board then
+                    Just result
+
+                else
+                    Nothing
+           )
 
 
-getRows : Board -> Board
-getRows board =
-    let
-        getRow index =
-            board
-                |> List.filterMap (List.getAt index)
-                |> (\result ->
-                        if List.length result == List.length board then
-                            Just result
-
-                        else
-                            Nothing
-                   )
-    in
-    List.filterMap getRow (List.range 0 7)
-
-
-checkRows : Board -> Maybe Player
-checkRows board =
-    board
-        |> getRows
-        |> List.filterMap checkLineForWinner
-        |> List.head
-
-
-checkBoard : Board -> Maybe Player
-checkBoard board =
-    case checkColumns board of
-        Just player ->
-            Just player
-
+checkForWinner : Int -> Board -> Maybe Player
+checkForWinner columnIndex board =
+    case List.getAt columnIndex board of
         Nothing ->
-            checkRows board
+            -- This should never happen
+            Nothing
+
+        Just playColumn ->
+            case checkLineForWinner playColumn of
+                Just winner ->
+                    Just winner
+
+                Nothing ->
+                    let
+                        playRowIndex =
+                            playColumn
+                                |> List.findIndex ((==) Empty)
+                                |> Maybe.map ((-) 1)
+                                |> Maybe.withDefault (List.length playColumn)
+                    in
+                    case getRow board playRowIndex of
+                        Nothing ->
+                            -- This also should never happen
+                            Nothing
+
+                        Just playRow ->
+                            checkLineForWinner playRow
+
+
+playerToString : Player -> String
+playerToString player =
+    case player of
+        P1 ->
+            "Player 1"
+
+        P2 ->
+            "Player 2"

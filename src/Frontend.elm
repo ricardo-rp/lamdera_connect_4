@@ -11,7 +11,7 @@ import Element.Input exposing (button)
 import Lamdera
 import Types exposing (..)
 import Url
-import Utils exposing (dropPiece, emptyBoard)
+import Utils exposing (checkForWinner, dropPiece, emptyBoard)
 
 
 type alias Model =
@@ -36,6 +36,7 @@ init url key =
       , board = emptyBoard
       , error = Nothing
       , currentPlayer = P1
+      , winner = Nothing
       }
     , Cmd.none
     )
@@ -47,14 +48,10 @@ update msg model =
         UrlClicked urlRequest ->
             case urlRequest of
                 Internal url ->
-                    ( model
-                    , Nav.pushUrl model.key (Url.toString url)
-                    )
+                    ( model, Nav.pushUrl model.key (Url.toString url) )
 
                 External url ->
-                    ( model
-                    , Nav.load url
-                    )
+                    ( model, Nav.load url )
 
         UrlChanged url ->
             ( model, Cmd.none )
@@ -63,21 +60,24 @@ update msg model =
             ( model, Cmd.none )
 
         ClickedRow colIndex ->
-            let
-                boardResult =
-                    dropPiece colIndex model.currentPlayer model.board
-            in
-            case boardResult of
-                Ok newBoard ->
-                    ( { model
-                        | board = newBoard
-                        , currentPlayer = switchPlayer model.currentPlayer
-                      }
-                    , Cmd.none
-                    )
+            case model.winner of
+                Just _ ->
+                    ( model, Cmd.none )
 
-                Err error ->
-                    ( { model | error = Just error }, Cmd.none )
+                Nothing ->
+                    case dropPiece colIndex model.currentPlayer model.board of
+                        Ok newBoard ->
+                            ( { model
+                                | board = newBoard
+                                , currentPlayer = switchPlayer model.currentPlayer
+                                , winner = checkForWinner colIndex newBoard
+                                , error = Nothing
+                              }
+                            , Cmd.none
+                            )
+
+                        Err error ->
+                            ( { model | error = Just error }, Cmd.none )
 
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
@@ -104,6 +104,16 @@ view model =
                 [ el [ centerX, padding 20, Font.size 20 ] (text "Connect 4")
                 , row [] (List.indexedMap makeColumn model.board)
                 , el [ centerX, padding 10, Font.size 12 ] (text (Maybe.withDefault "" model.error))
+                , el [ centerX, padding 10, Font.size 12 ]
+                    (text
+                        (case model.winner of
+                            Nothing ->
+                                ""
+
+                            Just winner ->
+                                "Winner: " ++ Utils.playerToString winner
+                        )
+                    )
                 ]
             )
         ]

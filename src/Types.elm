@@ -10,6 +10,7 @@ type alias FrontendModel =
     , board : Board
     , error : Maybe String
     , currentPlayer : Player
+    , winner : Maybe Player
     }
 
 
