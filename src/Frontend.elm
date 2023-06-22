@@ -1,10 +1,13 @@
 module Frontend exposing (..)
 
-import Board exposing (Cell(..), Player(..))
+import Board exposing (Cell(..), Player(..), switchPlayer)
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
+import Colors exposing (blue, gray, lightGray, red)
 import Element exposing (..)
-import Element.Events exposing (onClick)
+import Element.Background as Background
+import Element.Border as Border exposing (rounded)
+import Element.Font as Font
 import Element.Input exposing (button)
 import Lamdera
 import Types exposing (..)
@@ -32,6 +35,7 @@ init url key =
     ( { key = key
       , board = Board.init
       , error = Nothing
+      , currentPlayer = P1
       }
     , Cmd.none
     )
@@ -61,11 +65,16 @@ update msg model =
         ClickedRow colIndex ->
             let
                 boardResult =
-                    Board.dropPiece colIndex P1 model.board
+                    Board.dropPiece colIndex model.currentPlayer model.board
             in
             case boardResult of
                 Ok newBoard ->
-                    ( { model | board = newBoard }, Cmd.none )
+                    ( { model
+                        | board = newBoard
+                        , currentPlayer = switchPlayer model.currentPlayer
+                      }
+                    , Cmd.none
+                    )
 
                 Err error ->
                     ( { model | error = Just error }, Cmd.none )
@@ -83,9 +92,18 @@ view model =
     { title = ""
     , body =
         [ layout []
-            (column [ centerX, centerY ]
-                [ text "Conect 4"
+            (column
+                [ centerX
+                , centerY
+                , rounded 10
+                , Border.solid
+                , Border.color gray
+                , Border.width 2
+                , clip
+                ]
+                [ el [ centerX, padding 20, Font.size 20 ] (text "Connect 4")
                 , row [] (List.indexedMap makeColumn model.board)
+                , el [ centerX, padding 10, Font.size 12 ] (text (Maybe.withDefault "" model.error))
                 ]
             )
         ]
@@ -98,7 +116,8 @@ makeColumn index boardColumn =
         reversedColumn =
             List.reverse boardColumn
     in
-    button []
+    button
+        [ mouseOver [ Background.color lightGray ] ]
         { label = column [] (List.map makeCell reversedColumn)
         , onPress = Just (ClickedRow index)
         }
@@ -106,14 +125,27 @@ makeColumn index boardColumn =
 
 makeCell : Cell -> Element msg
 makeCell cell =
-    case cell of
-        Empty ->
-            text "E"
+    let
+        ( content, color ) =
+            case cell of
+                Empty ->
+                    ( " ", gray )
 
-        FilledBy player ->
-            case player of
-                P1 ->
-                    text "1"
+                FilledBy player ->
+                    case player of
+                        P1 ->
+                            ( "x", red )
 
-                P2 ->
-                    text "2"
+                        P2 ->
+                            ( "x", blue )
+    in
+    el
+        [ padding 5
+        , Border.color gray
+        , Border.solid
+        , Border.width 1
+        , width (px 40)
+        , height (px 40)
+        , Font.color color
+        ]
+        (el [ centerX, centerY ] (text content))

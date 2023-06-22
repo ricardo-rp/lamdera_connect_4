@@ -1,4 +1,4 @@
-module Board exposing (Board, Cell(..), Column, Player(..), dropPiece, init)
+module Board exposing (Board, Cell(..), Column, Player(..), dropPiece, init, switchPlayer)
 
 import List.Extra as List
 
@@ -11,6 +11,16 @@ type Cell
 type Player
     = P1
     | P2
+
+
+switchPlayer : Player -> Player
+switchPlayer player =
+    case player of
+        P1 ->
+            P2
+
+        P2 ->
+            P1
 
 
 type alias Column =

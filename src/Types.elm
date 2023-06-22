@@ -1,6 +1,6 @@
 module Types exposing (..)
 
-import Board exposing (Board)
+import Board exposing (Board, Player)
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Url exposing (Url)
@@ -10,6 +10,7 @@ type alias FrontendModel =
     { key : Key
     , board : Board
     , error : Maybe String
+    , currentPlayer : Player
     }
 
 
