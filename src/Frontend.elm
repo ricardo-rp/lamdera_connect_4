@@ -4,6 +4,7 @@ import Board exposing (Cell(..), Player(..))
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Element exposing (..)
+import Element.Events exposing (onClick)
 import Element.Input exposing (button)
 import Lamdera
 import Types exposing (..)
@@ -97,24 +98,22 @@ makeColumn index boardColumn =
         reversedColumn =
             List.reverse boardColumn
     in
-    column []
-        (List.map
-            (\cell ->
-                button []
-                    { onPress = Just <| ClickedRow index
-                    , label =
-                        case cell of
-                            Empty ->
-                                text "E"
+    button []
+        { label = column [] (List.map makeCell reversedColumn)
+        , onPress = Just (ClickedRow index)
+        }
 
-                            FilledBy player ->
-                                case player of
-                                    P1 ->
-                                        text "1"
 
-                                    P2 ->
-                                        text "2"
-                    }
-            )
-            reversedColumn
-        )
+makeCell : Cell -> Element msg
+makeCell cell =
+    case cell of
+        Empty ->
+            text "E"
+
+        FilledBy player ->
+            case player of
+                P1 ->
+                    text "1"
+
+                P2 ->
+                    text "2"
