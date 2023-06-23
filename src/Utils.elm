@@ -5,9 +5,19 @@ import Maybe.Extra as Maybe
 import Types exposing (..)
 
 
+boardWidth : Int
+boardWidth =
+    7
+
+
+boardHeight : Int
+boardHeight =
+    6
+
+
 emptyBoard : Board
 emptyBoard =
-    List.repeat 7 (List.repeat 6 Empty)
+    List.repeat boardWidth (List.repeat boardHeight Empty)
 
 
 dropPiece : Int -> Player -> Board -> Result String Board
@@ -65,8 +75,8 @@ getRow board index =
 
 
 checkForWinner : Int -> Board -> Maybe Player
-checkForWinner columnIndex board =
-    case List.getAt columnIndex board of
+checkForWinner xPos board =
+    case List.getAt xPos board of
         Nothing ->
             -- This should never happen
             Nothing
@@ -78,19 +88,24 @@ checkForWinner columnIndex board =
 
                 Nothing ->
                     let
-                        playRowIndex =
+                        yPos =
                             playColumn
                                 |> List.findIndex ((==) Empty)
                                 |> Maybe.map ((-) 1)
                                 |> Maybe.withDefault (List.length playColumn)
                     in
-                    case getRow board playRowIndex of
+                    case getRow board yPos of
+                        Just playRow ->
+                            case checkLineForWinner playRow of
+                                Just winner ->
+                                    Just winner
+
+                                Nothing ->
+                                    Nothing
+
                         Nothing ->
                             -- This also should never happen
                             Nothing
-
-                        Just playRow ->
-                            checkLineForWinner playRow
 
 
 playerToString : Player -> String
