@@ -2,7 +2,7 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
-import Colors exposing (blue, gray, lightGray, red)
+import Colors exposing (blue, gray, lightBlue, lightGray, lightRed, red)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border exposing (rounded)
@@ -102,13 +102,13 @@ view model =
                 , clip
                 ]
                 [ el [ centerX, padding 20, Font.size 20 ] (text "Connect 4")
-                , row [] (List.indexedMap makeColumn model.board)
+                , row [] (List.indexedMap (makeColumn model.currentPlayer) model.board)
                 , el [ centerX, padding 10, Font.size 12 ] (text (Maybe.withDefault "" model.error))
                 , el [ centerX, padding 10, Font.size 12 ]
                     (text
                         (case model.winner of
                             Nothing ->
-                                ""
+                                " "
 
                             Just winner ->
                                 "Winner: " ++ Utils.playerToString winner
@@ -120,14 +120,22 @@ view model =
     }
 
 
-makeColumn : Int -> List Cell -> Element FrontendMsg
-makeColumn index boardColumn =
+makeColumn : Player -> Int -> List Cell -> Element FrontendMsg
+makeColumn currentPlayer index boardColumn =
     let
         reversedColumn =
             List.reverse boardColumn
+
+        hoverColor =
+            case currentPlayer of
+                P1 ->
+                    lightRed
+
+                P2 ->
+                    lightBlue
     in
     button
-        [ mouseOver [ Background.color lightGray ] ]
+        [ mouseOver [ Background.color hoverColor ] ]
         { label = column [] (List.map makeCell reversedColumn)
         , onPress = Just (ClickedRow index)
         }
