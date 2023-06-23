@@ -2,7 +2,8 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
-import Colors exposing (blue, gray, lightBlue, lightGray, lightRed, red)
+import Colors exposing (blue, gray, red)
+import Connect4 exposing (Cell(..), Player(..))
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border exposing (rounded)
@@ -11,7 +12,7 @@ import Element.Input exposing (button)
 import Lamdera
 import Types exposing (..)
 import Url
-import Utils exposing (checkForWinner, dropPiece, emptyBoard)
+import Utils exposing (playerLightColor)
 
 
 type alias Model =
@@ -25,18 +26,15 @@ app =
         , onUrlChange = UrlChanged
         , update = update
         , updateFromBackend = updateFromBackend
-        , subscriptions = \m -> Sub.none
+        , subscriptions = \_ -> Sub.none
         , view = view
         }
 
 
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
-init url key =
+init _ key =
     ( { key = key
-      , board = emptyBoard
-      , error = Nothing
-      , currentPlayer = P1
-      , winner = Nothing
+      , game = Connect4.init
       }
     , Cmd.none
     )
@@ -53,31 +51,17 @@ update msg model =
                 External url ->
                     ( model, Nav.load url )
 
-        UrlChanged url ->
+        UrlChanged _ ->
             ( model, Cmd.none )
 
         NoOpFrontendMsg ->
             ( model, Cmd.none )
 
         ClickedRow colIndex ->
-            case model.winner of
-                Just _ ->
-                    ( model, Cmd.none )
+            ( model, Lamdera.sendToBackend (UserClickedRow colIndex) )
 
-                Nothing ->
-                    case dropPiece colIndex model.currentPlayer model.board of
-                        Ok newBoard ->
-                            ( { model
-                                | board = newBoard
-                                , currentPlayer = switchPlayer model.currentPlayer
-                                , winner = checkForWinner colIndex newBoard
-                                , error = Nothing
-                              }
-                            , Cmd.none
-                            )
-
-                        Err error ->
-                            ( { model | error = Just error }, Cmd.none )
+        Reset ->
+            ( model, Lamdera.sendToBackend UserClickedReset )
 
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
@@ -85,6 +69,14 @@ updateFromBackend msg model =
     case msg of
         NoOpToFrontend ->
             ( model, Cmd.none )
+
+        UpdateGame game ->
+            ( { model | game = game }, Cmd.none )
+
+
+edges : { top : number, bottom : number, left : number, right : number }
+edges =
+    { top = 0, bottom = 0, left = 0, right = 0 }
 
 
 view : Model -> Browser.Document FrontendMsg
@@ -100,20 +92,32 @@ view model =
                 , Border.color gray
                 , Border.width 2
                 , clip
+                , paddingEach { edges | bottom = 20 }
                 ]
                 [ el [ centerX, padding 20, Font.size 20 ] (text "Connect 4")
-                , row [] (List.indexedMap (makeColumn model.currentPlayer) model.board)
-                , el [ centerX, padding 10, Font.size 12 ] (text (Maybe.withDefault "" model.error))
+                , row []
+                    (List.indexedMap
+                        (makeColumn model.game.currentPlayer)
+                        model.game.board
+                    )
+                , el [ centerX, padding 10, Font.size 12 ] (text (Maybe.withDefault "" model.game.error))
                 , el [ centerX, padding 10, Font.size 12 ]
                     (text
-                        (case model.winner of
+                        (case model.game.winner of
                             Nothing ->
                                 " "
 
                             Just winner ->
-                                "Winner: " ++ Utils.playerToString winner
+                                "Winner: " ++ Connect4.playerToString winner
                         )
                     )
+                , button
+                    [ centerX
+                    , padding 10
+                    , Background.color
+                        (playerLightColor model.game.currentPlayer)
+                    ]
+                    { label = text "Reset", onPress = Just Reset }
                 ]
             )
         ]
@@ -127,12 +131,7 @@ makeColumn currentPlayer index boardColumn =
             List.reverse boardColumn
 
         hoverColor =
-            case currentPlayer of
-                P1 ->
-                    lightRed
-
-                P2 ->
-                    lightBlue
+            playerLightColor currentPlayer
     in
     button
         [ mouseOver [ Background.color hoverColor ] ]
