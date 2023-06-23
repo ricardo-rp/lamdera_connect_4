@@ -81,31 +81,41 @@ checkForWinner xPos board =
             -- This should never happen
             Nothing
 
-        Just playColumn ->
-            case checkLineForWinner playColumn of
+        Just column ->
+            case checkLineForWinner column of
                 Just winner ->
                     Just winner
 
                 Nothing ->
                     let
                         yPos =
-                            playColumn
-                                |> List.findIndex ((==) Empty)
-                                |> Maybe.map ((-) 1)
-                                |> Maybe.withDefault (List.length playColumn)
+                            getLastPiecePosition column
                     in
                     case getRow board yPos of
-                        Just playRow ->
-                            case checkLineForWinner playRow of
+                        Nothing ->
+                            -- This also should never happen
+                            Nothing
+
+                        Just row ->
+                            case checkLineForWinner row of
                                 Just winner ->
                                     Just winner
 
                                 Nothing ->
-                                    Nothing
+                                    let
+                                        diagonal =
+                                            getDiagonal ( xPos, yPos ) board
+                                    in
+                                    case checkLineForWinner diagonal of
+                                        Just winner ->
+                                            Just winner
 
-                        Nothing ->
-                            -- This also should never happen
-                            Nothing
+                                        Nothing ->
+                                            let
+                                                inverseDiagonal =
+                                                    getDiagonal ( xPos, yPos ) (List.reverse board)
+                                            in
+                                            checkLineForWinner inverseDiagonal
 
 
 playerToString : Player -> String
@@ -116,3 +126,80 @@ playerToString player =
 
         P2 ->
             "Player 2"
+
+
+getAt : ( Int, Int ) -> Board -> Maybe Cell
+getAt ( x, y ) board =
+    board
+        |> List.getAt x
+        |> Maybe.andThen (List.getAt y)
+
+
+getDiagonal : ( Int, Int ) -> Board -> List Cell
+getDiagonal coords board =
+    let
+        fromTop =
+            List.reverse
+                (getUpLeftDiagonal [] coords board)
+
+        toBottom =
+            getDownRightDiagonal [] coords board
+                |> List.tail
+                |> Maybe.withDefault []
+    in
+    fromTop ++ toBottom
+
+
+getDownRightDiagonal : List Cell -> ( Int, Int ) -> Board -> List Cell
+getDownRightDiagonal acc ( x, y ) board =
+    case getAt ( x, y ) board of
+        Nothing ->
+            acc
+
+        Just cell ->
+            cell :: getDownRightDiagonal acc ( x + 1, y + 1 ) board
+
+
+getUpLeftDiagonal : List Cell -> ( Int, Int ) -> Board -> List Cell
+getUpLeftDiagonal acc ( x, y ) board =
+    case getAt ( x, y ) board of
+        Nothing ->
+            acc
+
+        Just cell ->
+            cell :: getUpLeftDiagonal acc ( x - 1, y - 1 ) board
+
+
+stringifyLine : List Cell -> String
+stringifyLine list =
+    let
+        cellToString cell =
+            case cell of
+                Empty ->
+                    "E"
+
+                FilledBy player ->
+                    case player of
+                        P1 ->
+                            "1"
+
+                        P2 ->
+                            "2"
+    in
+    list
+        |> List.map cellToString
+        |> String.join ","
+
+
+getLastPiecePosition : List Cell -> Int
+getLastPiecePosition list =
+    let
+        firstEmtpyIndex =
+            List.findIndex ((==) Empty) list
+    in
+    case firstEmtpyIndex of
+        Nothing ->
+            List.length list
+
+        Just index ->
+            index - 1

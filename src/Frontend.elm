@@ -128,7 +128,7 @@ makeColumn index boardColumn =
     in
     button
         [ mouseOver [ Background.color lightGray ] ]
-        { label = column [] (List.map makeCell reversedColumn)
+        { label = column [] (List.map makeCell boardColumn)
         , onPress = Just (ClickedRow index)
         }
 
